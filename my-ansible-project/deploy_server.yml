@@ -1,0 +1,33 @@
+- name: Deploy Backend Server
+  hosts: server
+  remote_user: ubuntu
+  vars:
+    path_to_private_key: "{{playbook_dir}}/jia.pem"
+    project_dir: "{{playbook_dir}}"
+  become: true
+  tasks:
+    - name: Copy FastAPI Docker folder
+      become: true
+      copy:
+        src: "{{ project_dir }}/docker_fastapi/"
+        dest: /root/docker_fastapi/
+        mode: 0644
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+    - name: Build FastAPI Server Docker Image
+      become: true
+      command: 
+        cmd: sudo docker build -t api_image_01 /root/docker_fastapi/
+        chdir: /root/docker_fastapi/
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+    - name: Run FastAPI server container
+      become: true
+      command:
+        cmd: sudo docker run -d --name api_container_01 -p 9101:80 api_image_01
+
+      
+      
+        

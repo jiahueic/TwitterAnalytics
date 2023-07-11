@@ -1,3 +1,0 @@
-$ cd ~/fastapi/ #put Dockerfile, requirements.txt and app folder containing _init_.py and main.py in this fastapi folder
-$ sudo docker build -t api_image_01 . #build the image
-$ sudo docker run -d --name api_container_01 -p 9101:80 api_image_01 # run the container

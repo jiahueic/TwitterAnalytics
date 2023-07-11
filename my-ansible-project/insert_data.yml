@@ -1,0 +1,77 @@
+- name: Insert Twitter Data
+  hosts: twittermaster
+  remote_user: ubuntu
+  vars:
+    path_to_private_key: ~/Downloads/jia.pem
+    project_dir: "{{playbook_dir}}"
+    venv_path: /root/data_importing/venv/
+  become: true
+  tasks:
+    - name: Install Python3 venv package
+      become: true
+      apt:
+        name: python3-venv
+        state: present
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: Copy data importing script folder
+      become: true
+      copy:
+        src: "{{ project_dir }}/data_importing/"
+        dest: /root/data_importing/
+        mode: 0644
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: Install Python venv package
+      become: true
+      apt:
+        name: python3-venv
+        state: present
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: Create Virtual Environment
+      command: /usr/bin/python3 -m venv {{ venv_path }}
+      become: true
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: Install required packages in virtual environment
+      become: true
+      script: "{{ project_dir }}/data_importing/importing_requirements.sh"
+      args:
+        chdir: /root/data_importing/
+        executable: /bin/bash
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: Import twitter data
+      shell: "(cd /root/data_importing/ && sh /root/data_importing/import_fulltwitter.sh 172.26.135.152 &)"
+      become: true
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+    - name: Truncate Twitter data
+      become: true
+      script: "{{ project_dir }}/data_importing/truncate_twitter.sh"
+      args:
+        chdir: /root/data_importing/
+        executable: /bin/bash
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+    - name: Import twitter geo data
+      shell: "(cd /root/data_importing/ && sh /root/data_importing/import_geotwitter.sh 172.26.135.89 &)"
+      become: true
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+

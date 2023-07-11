@@ -1,0 +1,59 @@
+
+- name: Build VueJS Server Docker Image
+  hosts: localhost
+  become: true
+  gather_facts: false
+  vars:
+    project_dir: "{{ playbook_dir }}"
+  tasks:
+    - name: Change permissions for vue-cli-service
+      command: "chmod +x node_modules/.bin/vue-cli-service"
+      args: 
+        chdir: "{{ project_dir }}/docker_vuejs/"
+
+    - name: Build Docker image
+      command:
+        cmd: docker build -t vuejs-ccc/dockerize-vuejs-app .
+        chdir: "{{ project_dir }}/docker_vuejs/"
+
+    - name: Save Docker image
+      command:
+        cmd: docker save -o "{{ project_dir }}/vuejs_image.tar" vuejs-ccc/dockerize-vuejs-app
+        chdir: "{{ project_dir }}"
+
+    - name: Change permissions for vue_js_image.tar
+      file:
+        path: "{{ playbook_dir }}/vuejs_image.tar"
+        mode: 'u+r'
+
+- name: Transfer Docker Image to Remote Host
+  hosts: server
+  remote_user: ubuntu
+  vars:
+    path_to_private_key: "{{ playbook_dir }}/jia.pem"
+    project_dir: "{{ playbook_dir }}"
+  become: true
+  tasks:
+    - name: Transfer Docker image
+      copy:
+        src: "{{ project_dir }}/vuejs_image.tar"
+        dest: "/root/vuejs_image.tar"
+        mode: '0644'
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: Load Docker image
+      command:
+        cmd: docker load -i /root/vuejs_image.tar
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+
+    - name: Run VueJS server container
+      command:
+        cmd: docker run -it -p 8080:8080 --rm --name dockerize-vuejs-ccc-1 vuejs-ccc/dockerize-vuejs-app
+      vars:
+        ansible_ssh_private_key_file: "{{ path_to_private_key }}"
+        ansible_python_interpreter: /usr/bin/python3
+

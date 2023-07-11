@@ -1,0 +1,28 @@
+- name: Setup Twitter database views
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    project_dir: "{{ playbook_dir }}"
+    venv_path: "{{ project_dir }}/twitter_script/venv/"
+  tasks:
+    - name: Install virtualenv using pip
+      command: /usr/bin/python3 -m venv {{ venv_path }}
+
+    - name: Install required packages in virtual environment
+      become: true
+      script: "{{ project_dir }}/twitter_script/requirementsinstall.sh"
+      args:
+        chdir: "{{ project_dir }}/twitter_script"
+
+    - name: Create SA3 average sentiment view
+      become: true
+      script: "{{ project_dir }}/twitter_script/sentiment_mapreduce.sh"
+      args:
+        chdir: "{{ project_dir }}/twitter_script"
+
+    - name: Create twitter tag count view
+      become: true
+      script: "{{ project_dir }}/twitter_script/twitter_mapreduce.sh"
+      args:
+        chdir: "{{ project_dir }}/twitter_script"
