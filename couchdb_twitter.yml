@@ -1,0 +1,17 @@
+- name: Deploy CouchDB Databases
+  hosts: localhost
+  remote_user: ubuntu
+  vars:
+    user: admin
+    admin_password: admin
+    node: 172.26.135.152
+  become: true
+  tasks:
+    - name: Create Twitter Database
+      uri:
+        url: "http://{{ user }}:{{ admin_password }}@{{ node }}:5984/twitter"
+        method: PUT
+        return_content: yes
+        status_code: 201
+        force_basic_auth: yes
+ 

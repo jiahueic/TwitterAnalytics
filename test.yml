@@ -1,0 +1,67 @@
+- name: Deploy CouchDB Cluster
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    nodes:
+      - 172.26.135.89
+      - 172.26.133.31
+      - 172.26.128.49
+    masternode: "{{ nodes[0] }}"
+    othernodes: "{{ nodes[1:] }}"
+    size: "{{ nodes | length }}"
+    user: admin
+    password: admin
+    VERSION: 3.2.1
+    cookie: a192aeb9904e6590849337933b000c99
+  tasks:
+    - name: Enable Cluster
+      uri:
+        url: "http://{{ user }}:{{ password }}@{{ masternode }}:5984/_cluster_setup"
+        method: POST
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        body:
+          action: "enable_cluster"
+          bind_address: "0.0.0.0"
+          username: "{{ user }}"
+          password: "{{ password }}"
+          port: "5984"
+          remote_node: "{{ item }}"
+          node_count: "{{ nodes | length }}"
+          remote_current_user: "{{ user }}"
+          remote_current_password: "{{ password }}"
+        validate_certs: false
+        force_basic_auth: true   
+        status_code: 201
+      loop: "{{ othernodes }}"
+    - name: Add node
+      uri:
+        url: "http://{{ user }}:{{ password }}@{{ masternode }}:5984/_cluster_setup"
+        method: POST
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        body:
+          action: "add_node"
+          host: "{{ item }}"
+          port: 5984
+          username: "{{ user }}"
+          password: "{{ password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        status_code: 201
+      loop: "{{ othernodes }}"
+    - name: Finish cluster
+      uri:
+        url: "http://{{ user }}:{{ password }}@{{ masternode }}:5984/_cluster_setup"
+        method: POST
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        body:
+          action: "finish_cluster"
+        validate_certs: no
+        force_basic_auth: yes
+        status_code: 500

@@ -1,0 +1,65 @@
+- name: Create CouchDB Node Instance on OpenStack
+  hosts: localhost
+  gather_facts: true
+  collections:
+    - openstack.cloud
+  vars:
+    instances:
+      - name: couchdb_clusternode1
+      - name: couchdb_clusternode2
+      - name: couchdb_clusternode3
+    ansible_python_interpreter: /usr/bin/python3
+    availability_zone: melbourne-qh2-uom
+    instance_flavor: uom.mse.1c4g
+    instance_image: 3fdc6cfa-f197-4dfd-a6b4-b0b9f7795b41
+    instance_key_name: jia
+    sg_names:
+      - internet_access
+      - couchdb_access
+      - ssh_access
+      - couchdb_clusteraccess
+      - couchdb_clusteraccess2
+      - couchdb_clusteraccess3
+      - frontend_portaccess
+
+  tasks:
+    - name: Install openstacksdk
+      pip:
+        name: openstacksdk
+        state: latest
+
+    - name: Retrieve all available OpenStack images
+      openstack.cloud.image_info:
+      register: image_result
+
+    - name: Create instance
+      openstack.cloud.server:
+        name: "{{ item.name }}"
+        auto_floating_ip: false
+        availability_zone: "{{ availability_zone }}"
+        flavor: "{{ instance_flavor }}"
+        image: "{{ instance_image }}"
+        key_name: "{{ instance_key_name }}"
+        security_groups: "{{ sg_names }}"
+        timeout: 600
+        state: present
+        wait: true
+      loop: "{{ instances }}"
+      register: os_instance
+
+    - name: Wait for connection
+      wait_for:
+        host: "{{ item.openstack.public_v4 }}"
+        port: 22
+        timeout: 120
+        search_regex: OpenSSH
+      loop: "{{ os_instance.results }}"
+      when: item.openstack is defined
+
+    # Add hosts to Ansible in-memory inventory
+    - name: Add host
+      add_host:
+        name: '{{ item.openstack.public_v4 }}'
+        groups: instances
+      loop: '{{ os_instance.results }}'
+      when: item.openstack is defined
