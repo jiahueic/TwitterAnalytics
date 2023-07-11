@@ -1,5 +1,7 @@
 # COMP90024 Assignment 2 (Team 22) README
 Welcome to the README file of COMP90024 Assignment 2 (Team 22). This document outlines the folder/file structure of our repository on our main branch. 
+## Link to Video Demo
+https://youtu.be/cdNv2UyhJRA
 ## Folder/File Structure
 **/data-importing**: Contains Python scripts for filtering tweets with geo location field, appending sa3 region field to tweets with geo location field and for importing the entire 60 GB Twitter data into the CouchDB
 
